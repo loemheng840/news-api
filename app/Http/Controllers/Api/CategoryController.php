@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use App\Models\Category;
 
 class CategoryController extends Controller
 {
@@ -15,7 +15,6 @@ class CategoryController extends Controller
 
     public function store(Request $request) {
         $request->validate(['name'=>'required|unique:categories']);
-
         return Category::create([
             'name'=>$request->name,
             'slug'=>Str::slug($request->name)

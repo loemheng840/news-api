@@ -3,63 +3,73 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Like;
 use App\Models\Bookmark;
 use App\Models\ArticleView;
+use Illuminate\Http\Request;
 
 class EngagementController extends Controller
 {
-    // 👍 Like article
+    /*
+    |--------------------------------------------------------------------------
+    | LIKE
+    |--------------------------------------------------------------------------
+    */
     public function like(Request $request, $articleId)
     {
         Like::firstOrCreate([
             'article_id' => $articleId,
-            'user_id' => $request->user()->id
+            'user_id'    => $request->user()->id,
         ]);
 
-        return response()->json(['message'=>'Liked']);
+        return response()->json(['message' => 'Liked']);
     }
 
-    // 👎 Unlike article
     public function unlike(Request $request, $articleId)
     {
-        Like::where('article_id',$articleId)
-            ->where('user_id',$request->user()->id)
+        Like::where('article_id', $articleId)
+            ->where('user_id', $request->user()->id)
             ->delete();
 
-        return response()->json(['message'=>'Unliked']);
+        return response()->json(['message' => 'Unliked']);
     }
 
-    // ⭐ Bookmark
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKMARK
+    |--------------------------------------------------------------------------
+    */
     public function bookmark(Request $request, $articleId)
     {
         Bookmark::firstOrCreate([
-            'article_id'=>$articleId,
-            'user_id'=>$request->user()->id
+            'article_id' => $articleId,
+            'user_id'    => $request->user()->id,
         ]);
 
-        return response()->json(['message'=>'Bookmarked']);
+        return response()->json(['message' => 'Bookmarked']);
     }
 
-    // ❌ Remove bookmark
     public function unbookmark(Request $request, $articleId)
     {
-        Bookmark::where('article_id',$articleId)
-            ->where('user_id',$request->user()->id)
+        Bookmark::where('article_id', $articleId)
+            ->where('user_id', $request->user()->id)
             ->delete();
 
-        return response()->json(['message'=>'Removed bookmark']);
+        return response()->json(['message' => 'Removed']);
     }
 
-    // 👀 Unique view
+    /*
+    |--------------------------------------------------------------------------
+    | VIEW (UNIQUE BY IP)
+    |--------------------------------------------------------------------------
+    */
     public function view(Request $request, $articleId)
     {
         ArticleView::firstOrCreate([
             'article_id' => $articleId,
-            'ip_address' => $request->ip()
+            'ip_address' => $request->ip(),
         ]);
 
-        return response()->json(['message'=>'View counted']);
+        return response()->json(['message' => 'View counted']);
     }
 }

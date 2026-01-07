@@ -7,4 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Like extends Model
 {
     protected $fillable = ['article_id','user_id'];
+
+    public $timestamps = false;
+
+    public function article(){
+        return $this->belongsTo(Article::class);
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class);
+    }
 }

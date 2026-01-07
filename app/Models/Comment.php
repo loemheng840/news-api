@@ -6,10 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class Comment extends Model
 {
-    protected $fillable = ['article_id','user_name','content','status'];
+    protected $fillable = [
+        'article_id',
+        'user_id',
+        'parent_id',
+        'content',
+        'status'
+    ];
 
-    public function article()
+    public function replies()
     {
-        return $this->belongsTo(Article::class);
+        return $this->hasMany(Comment::class, 'parent_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

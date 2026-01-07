@@ -2,8 +2,10 @@ Absolutely 👍
 Here is a clean, complete recap of everything we did, what went wrong, and the final correct setup — so you can follow it later without confusion.
 
 🧠 GOAL (What You Wanted)
-
-Use Laravel Breeze for web login
+==================================
+Use Laravel Breeze: for web login use this command to
+generate login register form with write any thing
+==================================
 
 Test your API features in Postman
 
@@ -110,7 +112,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;  (add HasFactory)
 }
 
 
@@ -225,3 +227,8 @@ Token not working	Add HasApiTokens
 🛡️ Rate-limit login
 
 🚀 Production security checklist
+
+====================================
+ I have been worng with create migrate between bookmark and view articale
+ this is my mistak so please make somehting with carefully
+ ===================================

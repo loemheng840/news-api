@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,4 +58,19 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    // Middleware to check user roles
+    public function handle(Request $request, Closure $next, ...$roles)
+    {
+        $user = $request->user();
+
+        if (!$user || !in_array($user->role, $roles)) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], 403);
+        }
+
+        return $next($request);
+    }
+
 }

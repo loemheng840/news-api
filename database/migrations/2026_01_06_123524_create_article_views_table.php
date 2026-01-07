@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
- Schema::create('bookmarks', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('article_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $table->timestamps();
+        Schema::create('article_views', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('article_id')->constrained()->cascadeOnDelete();
+            $table->string('ip_address', 45);
+            $table->timestamps();
 
-    $table->unique(['article_id','user_id']);
+            $table->unique(['article_id','ip_address']);
         });
     }
 
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bookmarks');
+        Schema::dropIfExists('article_views');
     }
 };

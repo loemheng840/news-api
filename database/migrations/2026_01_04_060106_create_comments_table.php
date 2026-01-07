@@ -7,21 +7,30 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('comments', function (Blueprint $table) {
+       Schema::create('comments', function (Blueprint $table) {
             $table->id();
 
             $table->foreignId('article_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
-            $table->string('user_name', 100)->nullable();
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('parent_id')
+                ->nullable()
+                ->constrained('comments')
+                ->cascadeOnDelete();
+
             $table->text('content');
 
             $table->enum('status', ['PENDING','APPROVED','REJECTED'])
-                  ->default('PENDING');
+                ->default('PENDING');
 
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
         });
+
     }
 
     public function down(): void

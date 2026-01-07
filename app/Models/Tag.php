@@ -10,6 +10,6 @@ class Tag extends Model
 
     public function articles()
     {
-        return $this->belongsToMany(Article::class);
+        return $this->belongsToMany(Article::class); // Many-to-Many relationship with Article
     }
 }
