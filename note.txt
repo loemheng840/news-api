@@ -232,3 +232,216 @@ Token not working	Add HasApiTokens
  I have been worng with create migrate between bookmark and view articale
  this is my mistak so please make somehting with carefully
  ===================================
+    websocket
+ ====================================
+Yes — you absolutely CAN add WebSockets to your Engagement system (Like / Bookmark / View) 👍
+This is actually the best practice for real-time updates (like counts changing instantly).
+
+Below is a clear, practical guide using Laravel + WebSockets, explained step by step.
+
+🎯 WHAT WEBSOCKETS SOLVE IN ENGAGEMENT
+
+Without WebSocket:
+
+User clicks Like
+
+Backend updates DB
+
+Other users must refresh page to see new count ❌
+
+With WebSocket:
+
+User clicks Like
+
+Backend updates DB
+
+🔥 All connected users see the new count instantly ✅
+
+✅ WHAT WE WILL IMPLEMENT
+
+Real-time updates for:
+
+👍 Likes count
+
+⭐ Bookmarks count (optional)
+
+👀 Views count (optional)
+
+🧱 ARCHITECTURE (SIMPLE)
+User clicks Like
+   ↓
+EngagementController
+   ↓
+Database update
+   ↓
+Broadcast Event (WebSocket)
+   ↓
+Frontend receives update
+   ↓
+UI updates instantly
+
+🛠 OPTION 1 (RECOMMENDED): Laravel Reverb (Official)
+
+Laravel now has Reverb (official WebSocket server).
+
+1️⃣ Install Reverb
+php artisan install:broadcasting
+
+
+Choose:
+
+Reverb
+
+
+Then start server:
+
+php artisan reverb:start
+
+2️⃣ Enable Broadcasting
+.env
+BROADCAST_CONNECTION=reverb
+
+3️⃣ Create an Event
+php artisan make:event ArticleEngaged
+
+app/Events/ArticleEngaged.php
+<?php
+
+namespace App\Events;
+
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Queue\SerializesModels;
+
+class ArticleEngaged implements ShouldBroadcast
+{
+    use SerializesModels;
+
+    public $articleId;
+    public $likesCount;
+
+    public function __construct($articleId, $likesCount)
+    {
+        $this->articleId = $articleId;
+        $this->likesCount = $likesCount;
+    }
+
+    public function broadcastOn()
+    {
+        return new Channel('article.' . $this->articleId);
+    }
+}
+
+4️⃣ Fire Event from EngagementController
+Update your like() method:
+use App\Events\ArticleEngaged;
+
+public function like(Request $request, $articleId)
+{
+    Like::firstOrCreate([
+        'article_id' => $articleId,
+        'user_id' => $request->user()->id
+    ]);
+
+    $likesCount = Like::where('article_id', $articleId)->count();
+
+    broadcast(new ArticleEngaged($articleId, $likesCount));
+
+    return response()->json(['message' => 'Liked']);
+}
+
+5️⃣ Frontend (JavaScript Example)
+import Echo from 'laravel-echo';
+
+window.Echo = new Echo({
+  broadcaster: 'reverb',
+  host: window.location.hostname + ':8080'
+});
+
+Echo.channel(`article.${articleId}`)
+    .listen('ArticleEngaged', (e) => {
+        console.log('New likes:', e.likesCount);
+        document.getElementById('likes-count').innerText = e.likesCount;
+    });
+
+
+🔥 Now likes update instantly for everyone.
+
+⚠️ IMPORTANT SECURITY NOTE
+
+Likes & bookmarks → private (auth required)
+
+Broadcast channel can be:
+
+Public channel (recommended for counts)
+
+Private channel (if sensitive)
+
+Example private channel:
+
+return new PrivateChannel('article.' . $this->articleId);
+
+📊 WHAT YOU SHOULD BROADCAST (BEST PRACTICE)
+Action	Broadcast?
+Like count	✅ YES
+Bookmark count	⚠️ Optional
+View count	⚠️ Optional
+User ID	❌ NO
+🧠 SIMPLE RULE
+
+Broadcast counts, not users.
+Never expose user IDs in real-time events.
+
+🧪 TESTING WEBSOCKET
+
+Open 2 browsers
+
+Same article page
+
+Like article in one browser
+
+Other browser updates instantly ✅
+
+🚀 FINAL ANSWER
+
+✅ Yes, WebSockets are perfect for Engagement
+✅ Laravel supports it officially
+✅ Easy to integrate with your current controller
+✅ Makes your app feel modern and fast
+
+
+.env
+========================
+BROADCAST_CONNECTION=reverb
+
+REVERB_APP_ID=local
+REVERB_APP_KEY=local
+REVERB_APP_SECRET=local
+
+REVERB_HOST=127.0.0.1
+REVERB_PORT=6001
+REVERB_SCHEME=http
+
+config/broadcasting.php
+=========================
+'reverb' => [
+    'driver' => 'reverb',
+
+    'key' => env('REVERB_APP_KEY'),
+    'secret' => env('REVERB_APP_SECRET'),
+    'app_id' => env('REVERB_APP_ID'),
+
+    'options' => [
+        'host'   => env('REVERB_HOST', '127.0.0.1'),
+        'port'   => env('REVERB_PORT', 6001),
+        'scheme' => env('REVERB_SCHEME', 'http'),
+
+        // TLS must be FALSE for local
+        'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+    ],
+
+    'client_options' => [
+        // leave empty for now
+    ],
+],
+

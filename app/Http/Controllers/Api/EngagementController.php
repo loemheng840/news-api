@@ -7,6 +7,7 @@ use App\Models\Like;
 use App\Models\Bookmark;
 use App\Models\ArticleView;
 use Illuminate\Http\Request;
+use App\Events\ArticleEngaged;
 
 class EngagementController extends Controller
 {
@@ -15,15 +16,21 @@ class EngagementController extends Controller
     | LIKE
     |--------------------------------------------------------------------------
     */
+
     public function like(Request $request, $articleId)
     {
         Like::firstOrCreate([
             'article_id' => $articleId,
-            'user_id'    => $request->user()->id,
+            'user_id' => $request->user()->id
         ]);
+
+        $likesCount = Like::where('article_id', $articleId)->count();
+
+        broadcast(new ArticleEngaged($articleId, $likesCount));
 
         return response()->json(['message' => 'Liked']);
     }
+
 
     public function unlike(Request $request, $articleId)
     {
