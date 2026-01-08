@@ -31,11 +31,16 @@ class Article extends Model
         return $this->hasMany(Comment::class);
     }
     public function likes() {
-    return $this->hasMany(Like::class);
+        return $this->hasMany(Like::class);
     }
 
     public function bookmarks() {
         return $this->hasMany(Bookmark::class);
-}
+    }
+    public function views()
+    {
+        return $this->hasMany(ArticleView::class);
+    }
+
 
 }

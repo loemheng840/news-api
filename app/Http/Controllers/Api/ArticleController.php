@@ -9,29 +9,38 @@ use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
-    // Create Article (Draft)
     public function store(Request $request)
     {
         $request->validate([
-            'title'=>'required|max:255',
-            'content'=>'required',
-            'thumbnail'=>'nullable|image|mimes:jpg,png,jpeg|max:2048'
+            'title'       => 'required|string|max:255',
+            'content'     => 'required|string',
+            'category_id' => 'required|exists:categories,id',
+            'thumbnail'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        // Handle thumbnail upload
         $path = null;
         if ($request->hasFile('thumbnail')) {
-            $path = $request->file('thumbnail')->store('articles','public');
+            $path = $request->file('thumbnail')->store('articles', 'public');
         }
 
-        return Article::create([
-            'title'=>$request->title,
-            'slug'=>Str::slug($request->title),
-            'content'=>$request->content,
-            'thumbnail'=>$path,
-            'author_id'=>$request->user()->id,
-            'status'=>'DRAFT'
+        // Create article (DRAFT only)
+        $article = Article::create([
+            'title'       => $request->title,
+            'slug'        => Str::slug($request->title),
+            'content'     => $request->content,
+            'thumbnail'   => $path,
+            'author_id'   => $request->user()->id,
+            'status'      => 'DRAFT',
+            'category_id' => $request->category_id,
         ]);
+
+        return response()->json([
+            'message' => 'Article created as draft',
+            'article' => $article
+        ], 201);
     }
+
 
       // Get all articles (Admin / Editor use)
     public function index()
@@ -48,13 +57,15 @@ class ArticleController extends Controller
 
 
     // Get Article by Slug
+   // Get Article by Slug
     public function show($slug)
     {
-        return Article::where('slug',$slug)
-            ->with(['author','categories','tags'])
-            ->withCount(['likes','bookmarks'])
+        return Article::where('slug', $slug)
+            ->with(['author', 'categories', 'tags'])
+            ->withCount(['likes', 'bookmarks', 'views'])
             ->firstOrFail();
     }
+
 
     // Update Article
     public function update(Request $request, Article $article)
