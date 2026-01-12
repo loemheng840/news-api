@@ -11,6 +11,7 @@ class Article extends Model
         'views','category_id','author_id','published_at'
     ];
 
+    // One article belongs to one category
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -23,24 +24,26 @@ class Article extends Model
 
     public function tags()
     {
-        return $this->belongsToMany(Tag::class);
+        return $this->belongsToMany(Tag::class, 'article_tag');
     }
 
     public function comments()
     {
         return $this->hasMany(Comment::class);
     }
-    public function likes() {
+
+    public function likes()
+    {
         return $this->hasMany(Like::class);
     }
 
-    public function bookmarks() {
+    public function bookmarks()
+    {
         return $this->hasMany(Bookmark::class);
     }
-    public function views()
+
+    public function articleViews()
     {
         return $this->hasMany(ArticleView::class);
     }
-
-
 }

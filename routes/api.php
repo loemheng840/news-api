@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EngagementController;
 
 /*
@@ -41,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/articles/{article}/submit', [ArticleController::class, 'submit']);
         Route::post('/articles/{article}/meta', [ArticleController::class, 'attachMeta']);
-        Route::get('/articles', [ArticleController::class, 'index']);
+
 
     });
 
@@ -54,6 +55,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::put('/categories/{category}', [CategoryController::class, 'update']);
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | USERS (ADMIN)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:ADMIN')->group(function () {
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users/{id}', [UserController::class, 'show']);
+        Route::patch('/users/{id}/role', [UserController::class, 'updateRole']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
     });
 
     /*
@@ -115,7 +129,11 @@ Route::post('/articles/{article}/view', [EngagementController::class, 'view']);
 
 // Public reads
 Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{slug}', [CategoryController::class, 'show']);
+Route::get('/categories/{slug}/articles', [CategoryController::class, 'articles']);
 Route::get('/tags', [TagController::class, 'index']);
+
+Route::get('/articles', [ArticleController::class, 'index']);
 
 // Article detail (slug-based)
 Route::get('/articles/{slug}', [ArticleController::class, 'show']);

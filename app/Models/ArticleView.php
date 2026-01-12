@@ -10,7 +10,8 @@ class ArticleView extends Model
 
     public $timestamps = false;
 
-    public function article(){
-        return $this->belongTo(Article::class);
+    public function article()
+    {
+        return $this->belongsTo(Article::class);
     }
 }

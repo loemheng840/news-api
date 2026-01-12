@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
-    public function index($articleId)
+    public function index($article)
     {
-        return Comment::where('article_id',$articleId)
+        return Comment::where('article_id',$article)
             ->whereNull('parent_id')
             ->where('status','APPROVED')
             ->with('replies.user')
