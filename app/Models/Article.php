@@ -8,7 +8,7 @@ class Article extends Model
 {
     protected $fillable = [
         'title','slug','content','thumbnail','status',
-        'views','category_id','author_id','published_at'
+        'category_id','author_id','published_at'
     ];
 
     // One article belongs to one category
@@ -24,7 +24,7 @@ class Article extends Model
 
     public function tags()
     {
-        return $this->belongsToMany(Tag::class, 'article_tag');
+        return $this->belongsToMany(Tag::class);
     }
 
     public function comments()

@@ -26,7 +26,7 @@ return new class extends Migration {
             $table->text('content');
 
             $table->enum('status', ['PENDING','APPROVED','REJECTED'])
-                ->default('PENDING');
+                ->default('APPROVED');
 
             $table->timestamps();
         });

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EngagementController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,8 @@ use App\Http\Controllers\Api\EngagementController;
 |--------------------------------------------------------------------------
 */
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [RegisteredUserController::class, 'stored']);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -33,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     | ARTICLES (AUTHOR / EDITOR)
     |--------------------------------------------------------------------------
     */
-    Route::middleware('role:AUTHOR,EDITOR')->group(function () {
+    Route::middleware('role:AUTHOR,ADMIN')->group(function () {
         Route::get('/editor/articles', [ArticleController::class, 'myArticles']);
 
         Route::post('/articles', [ArticleController::class, 'store']);
@@ -42,7 +45,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/articles/{article}/submit', [ArticleController::class, 'submit']);
         Route::post('/articles/{article}/meta', [ArticleController::class, 'attachMeta']);
+        Route::get('/articles/me', [ArticleController::class, 'myArticles']);
 
+        Route::post('/articles/{article}/like', [EngagementController::class, 'like']);
+        Route::delete('/articles/{article}/like', [EngagementController::class, 'unlike']);
 
     });
 
@@ -87,6 +93,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/comments', [CommentController::class, 'store']);
     Route::put('/comments/{comment}', [CommentController::class, 'update']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::post('/comments/{comment}/like', [CommentController::class, 'like']);
+    Route::delete('/comments/{comment}/like', [CommentController::class, 'unlike']);
+
 
     Route::middleware('role:ADMIN')->group(function () {
         Route::patch('/comments/{comment}/moderate', [CommentController::class, 'moderate']);
@@ -97,11 +106,18 @@ Route::middleware('auth:sanctum')->group(function () {
     | ENGAGEMENT
     |--------------------------------------------------------------------------
     */
-    Route::post('/articles/{article}/like', [EngagementController::class, 'like']);
-    Route::delete('/articles/{article}/like', [EngagementController::class, 'unlike']);
-
     Route::post('/articles/{article}/bookmark', [EngagementController::class, 'bookmark']);
     Route::delete('/articles/{article}/bookmark', [EngagementController::class, 'unbookmark']);
+
+    /*
+    |---------------------------------------------------------------------------
+    | View
+    |---------------------------------------------------------------------------
+    */
+    Route::post('/articles/{id}/view', [EngagementController::class, 'view']);
+    Route::get('/articles/admin',[ArticleController::class, 'index']);
+
+    Route::get('/me/bookmarks', [EngagementController::class, 'myBookmarks']);
 });
 
 /*
@@ -110,6 +126,8 @@ Route::middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 | Static → Dynamic
 */
+Route::get('/articles/{article}/comments', [CommentController::class, 'index']);
+
 
 // Article discovery
 Route::get('/articles/latest', [ArticleController::class, 'latest']);
@@ -121,19 +139,15 @@ Route::get('/articles/tag/{slug}', [ArticleController::class, 'byTag']);
 Route::get('/articles/date', [ArticleController::class, 'byDate']);
 Route::get('/articles/{article}/related', [ArticleController::class, 'related']);
 
-// Comments
-Route::get('/articles/{article}/comments', [CommentController::class, 'index']);
-
-// Views
-Route::post('/articles/{article}/view', [EngagementController::class, 'view']);
-
 // Public reads
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 Route::get('/categories/{slug}/articles', [CategoryController::class, 'articles']);
 Route::get('/tags', [TagController::class, 'index']);
 
-Route::get('/articles', [ArticleController::class, 'index']);
-
 // Article detail (slug-based)
 Route::get('/articles/{slug}', [ArticleController::class, 'show']);
+
+// Articles by Tag
+Route::get('/tags/{slug}/articles', [ArticleController::class, 'byTag']);
+Route::get('/articles',[ArticleController::class, 'index']);

@@ -8,6 +8,7 @@ use App\Models\Bookmark;
 use App\Models\ArticleView;
 use Illuminate\Http\Request;
 use App\Events\ArticleEngaged;
+use App\Models\Article;
 
 class EngagementController extends Controller
 {
@@ -64,19 +65,45 @@ class EngagementController extends Controller
 
         return response()->json(['message' => 'Removed']);
     }
+    /*-------------------------------------------------------------------------
+    |
+    | GET MY BOOKMARK
+    |--------------------------------------------------------------------------
+    */
+
+    public function myBookmarks(Request $request)
+    {
+        $articles = Bookmark::with('article')
+            ->where('user_id', $request->user()->id)
+            ->get();
+
+        return response()->json($articles);
+    }
+
 
     /*
     |--------------------------------------------------------------------------
-    | VIEW (UNIQUE BY IP)
+    | VIEW (UNIQUE BY USERID)
     |--------------------------------------------------------------------------
     */
     public function view(Request $request, $articleId)
     {
-        ArticleView::firstOrCreate([
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $view = ArticleView::firstOrCreate([
             'article_id' => $articleId,
-            'ip_address' => $request->ip(),
+            'user_id' => $user->id
         ]);
+
+        if ($view->wasRecentlyCreated) {
+            Article::where('id', $articleId)->increment('views');
+        }
 
         return response()->json(['message' => 'View counted']);
     }
+
 }
