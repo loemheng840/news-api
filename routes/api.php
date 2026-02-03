@@ -95,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
     Route::post('/comments/{comment}/like', [CommentController::class, 'like']);
     Route::delete('/comments/{comment}/like', [CommentController::class, 'unlike']);
+    Route::get('/comments/{comment}/replies', [CommentController::class, 'replies']);
 
 
     Route::middleware('role:ADMIN')->group(function () {
@@ -116,7 +117,6 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::post('/articles/{id}/view', [EngagementController::class, 'view']);
     Route::get('/articles/admin',[ArticleController::class, 'index']);
-
     Route::get('/me/bookmarks', [EngagementController::class, 'myBookmarks']);
 });
 
@@ -127,7 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
 | Static → Dynamic
 */
 Route::get('/articles/{article}/comments', [CommentController::class, 'index']);
-
+Route::get('/articles/{article}/comments/{parent}/replies', [CommentController::class, 'replies']);
 
 // Article discovery
 Route::get('/articles/latest', [ArticleController::class, 'latest']);
