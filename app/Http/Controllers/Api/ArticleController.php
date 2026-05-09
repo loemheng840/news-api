@@ -18,9 +18,12 @@ class ArticleController extends Controller
             'content' => 'required',
             'category_id' => 'required|exists:categories,id',
             'thumbnail' => 'nullable|image|max:2048',
+            'status' => 'nullable|in:DRAFT,PUBLISHED,ARCHIVED',
             'tag_ids' => 'array',
             'tag_ids.*' => 'exists:tags,id',
         ]);
+
+        $status = $request->input('status', 'DRAFT');
 
         $article = Article::create([
             'title' => $request->title,
@@ -29,7 +32,8 @@ class ArticleController extends Controller
             'thumbnail' => $request->hasFile('thumbnail') ? $request->file('thumbnail')->store('thumbnails','public') : null,
             'category_id' => $request->category_id,
             'author_id' => $request->user()->id,
-            'status' => 'PUBLISHED',
+            'status' => $status,
+            'published_at' => $status === 'PUBLISHED' ? now() : null,
         ]);
 
         // Attach tags
@@ -74,6 +78,16 @@ class ArticleController extends Controller
             ->where('status','PUBLISHED')
             ->latest('created_at')
             ->paginate(10);
+    }
+
+    public function featured()
+    {
+        return Article::with(['author', 'category', 'tags', 'likes'])
+            ->where('status', 'PUBLISHED')
+            ->orderByDesc('views')
+            ->latest('published_at')
+            ->limit(5)
+            ->get();
     }
 
     // Trending
@@ -126,6 +140,28 @@ class ArticleController extends Controller
             ->where('status','PUBLISHED')
             ->latest()
             ->paginate(10);
+    }
+
+    public function related($article)
+    {
+        $baseArticle = is_numeric($article)
+            ? Article::with('tags')->findOrFail($article)
+            : Article::with('tags')->where('slug', $article)->firstOrFail();
+
+        $tagIds = $baseArticle->tags->pluck('id')->all();
+
+        return Article::with(['author', 'category', 'tags', 'likes'])
+            ->where('status', 'PUBLISHED')
+            ->where('id', '!=', $baseArticle->id)
+            ->where(function ($query) use ($baseArticle, $tagIds) {
+                $query->where('category_id', $baseArticle->category_id);
+                if (!empty($tagIds)) {
+                    $query->orWhereHas('tags', fn ($tagQuery) => $tagQuery->whereIn('tags.id', $tagIds));
+                }
+            })
+            ->latest()
+            ->limit(6)
+            ->get();
     }
 
     // My Articles
@@ -195,6 +231,9 @@ class ArticleController extends Controller
 
         if ($request->has('status')) {
             $article->status = $request->status;
+            $article->published_at = $request->status === 'PUBLISHED'
+                ? ($article->published_at ?? now())
+                : null;
         }
 
         $article->save();
@@ -207,6 +246,62 @@ class ArticleController extends Controller
         return response()->json([
             'message' => 'Article updated successfully',
             'article' => $article->load(['author','category','tags'])
+        ]);
+    }
+
+    public function submit(Request $request, $id)
+    {
+        $article = Article::findOrFail($id);
+
+        if ($request->user()->id !== $article->author_id && $request->user()->role !== 'ADMIN') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $article->status = 'PUBLISHED';
+        $article->published_at = $article->published_at ?? now();
+        $article->save();
+
+        return response()->json([
+            'message' => 'Article submitted successfully',
+            'article' => $article->load(['author', 'category', 'tags']),
+        ]);
+    }
+
+    public function attachMeta(Request $request, $id)
+    {
+        $article = Article::findOrFail($id);
+
+        if ($request->user()->id !== $article->author_id && $request->user()->role !== 'ADMIN') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'category_id' => 'nullable|exists:categories,id',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'exists:tags,id',
+            'status' => 'nullable|in:DRAFT,PUBLISHED,ARCHIVED',
+        ]);
+
+        if ($request->filled('category_id')) {
+            $article->category_id = $request->category_id;
+        }
+
+        if ($request->filled('status')) {
+            $article->status = $request->status;
+            $article->published_at = $request->status === 'PUBLISHED'
+                ? ($article->published_at ?? now())
+                : null;
+        }
+
+        $article->save();
+
+        if ($request->has('tag_ids')) {
+            $article->tags()->sync($request->tag_ids);
+        }
+
+        return response()->json([
+            'message' => 'Article metadata updated successfully',
+            'article' => $article->load(['author', 'category', 'tags']),
         ]);
     }
 }
