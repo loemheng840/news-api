@@ -8,7 +8,11 @@ class Article extends Model
 {
     protected $fillable = [
         'title','slug','content','thumbnail','status',
-        'category_id','author_id','published_at'
+        'category_id','author_id','published_at','notified_at'
+    ];
+
+    protected $casts = [
+        'notified_at' => 'datetime',
     ];
 
     // One article belongs to one category

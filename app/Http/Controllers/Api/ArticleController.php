@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ArticlePublished;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Category;
@@ -41,6 +42,11 @@ class ArticleController extends Controller
             $article->tags()->sync($request->tag_ids);
         }
 
+        if ($article->notified_at === null && $article->status === 'PUBLISHED') {
+            $article->load('author');
+            ArticlePublished::dispatch($article);
+        }
+
         return response()->json($article->load('tags'), 201);
     }
 
@@ -64,9 +70,11 @@ class ArticleController extends Controller
     // Article Detail
     public function show($slug)
     {
-        $article = Article::with(['author','category','tags','likes'])
-            ->withCount(['likes','bookmarks'])
-            ->where('slug',$slug)
+        $article = Article::with(['author' => function ($query) {
+                $query->withCount('followers');
+            }, 'category', 'tags', 'likes'])
+            ->withCount(['likes', 'bookmarks'])
+            ->where('slug', $slug)
             ->firstOrFail();
         return response()->json($article);
     }
@@ -243,6 +251,11 @@ class ArticleController extends Controller
             $article->tags()->sync($request->tag_ids);
         }
 
+        if ($article->notified_at === null && $article->status === 'PUBLISHED') {
+            $article->load('author');
+            ArticlePublished::dispatch($article);
+        }
+
         return response()->json([
             'message' => 'Article updated successfully',
             'article' => $article->load(['author','category','tags'])
@@ -260,6 +273,11 @@ class ArticleController extends Controller
         $article->status = 'PUBLISHED';
         $article->published_at = $article->published_at ?? now();
         $article->save();
+
+        if ($article->notified_at === null && $article->status === 'PUBLISHED') {
+            $article->load('author');
+            ArticlePublished::dispatch($article);
+        }
 
         return response()->json([
             'message' => 'Article submitted successfully',

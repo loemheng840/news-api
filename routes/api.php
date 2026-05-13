@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EngagementController;
+use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 /*
@@ -118,6 +119,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/articles/{id}/view', [EngagementController::class, 'view']);
     Route::get('/articles/admin',[ArticleController::class, 'index']);
     Route::get('/me/bookmarks', [EngagementController::class, 'myBookmarks']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | FOLLOW SYSTEM
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/authors/{author}/follow', [FollowController::class, 'follow']);
+    Route::delete('/authors/{author}/follow', [FollowController::class, 'unfollow']);
+    Route::get('/me/following', [FollowController::class, 'following']);
+    Route::get('/authors/{author}/follow-status', [FollowController::class, 'checkStatus']);
+
+    Route::middleware('role:AUTHOR,ADMIN')->group(function () {
+        Route::get('/me/followers', [FollowController::class, 'followers']);
+    });
 });
 
 /*
