@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
@@ -38,19 +39,6 @@ class CommentController extends Controller
     /**
      * Create new comment or reply
      * POST /api/comments
-     *
-     * Body for top-level comment:
-     * {
-     *     "article_id": 76,
-     *     "content": "This article is very helpful!"
-     * }
-     *
-     * Body for reply:
-     * {
-     *     "article_id": 76,
-     *     "content": "I agree with you!",
-     *     "parent_id": 54
-     * }
      */
     public function store(Request $request)
     {
@@ -76,10 +64,14 @@ class CommentController extends Controller
             'parent_id'  => $request->parent_id,
             'content'    => $request->content,
             'status'     => 'APPROVED',
+            'ip_address' => $request->ip(),
         ]);
 
         // Load user relationship for response
         $comment->load('user');
+
+        // Send notifications
+        app(NotificationService::class)->notifyCommentOwner($comment);
 
         return response()->json($comment, 201);
     }
@@ -129,16 +121,45 @@ class CommentController extends Controller
         abort_if($request->user()->role !== 'ADMIN', 403);
 
         $request->validate([
-            'status' => 'required|in:APPROVED,REJECTED',
+            'status' => 'required|in:APPROVED,REJECTED,PENDING',
         ]);
 
         $comment->update([
             'status' => $request->status,
         ]);
 
+        // For admin, expose ip_address
+        $comment->makeVisible('ip_address');
+
         return response()->json([
             'message' => 'Comment status updated',
             'comment' => $comment
         ]);
+    }
+
+    /**
+     * Admin: list comments with optional status filter.
+     * GET /api/admin/comments
+     */
+    public function adminIndex(Request $request)
+    {
+        $query = Comment::with(['user', 'article'])->orderBy('created_at', 'desc');
+
+        if ($request->has('status')) {
+            if (!in_array($request->status, ['PENDING', 'APPROVED', 'REJECTED'])) {
+                return response()->json(['message' => 'Invalid status value'], 422);
+            }
+            $query->where('status', $request->status);
+        }
+
+        $comments = $query->paginate(20);
+
+        // Expose ip_address for admin
+        $comments->getCollection()->transform(function ($comment) {
+            $comment->makeVisible('ip_address');
+            return $comment;
+        });
+
+        return response()->json($comments);
     }
 }

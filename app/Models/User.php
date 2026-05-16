@@ -15,7 +15,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // if you added roles
+        'role',
     ];
 
     protected $hidden = [
@@ -36,16 +36,46 @@ class User extends Authenticatable
      */
     public function following()
     {
-        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'author_id')
+        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')
                     ->withPivot('created_at');
     }
 
     /**
-     * Users who follow this user (as an author).
+     * Users who follow this user.
      */
     public function followers()
     {
-        return $this->belongsToMany(User::class, 'follows', 'author_id', 'follower_id')
+        return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
                     ->withPivot('created_at');
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class);
+    }
+
+    public function notificationSetting()
+    {
+        return $this->hasOne(NotificationSetting::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
+    public function media()
+    {
+        return $this->hasMany(MediaLibrary::class, 'uploader_id');
     }
 }

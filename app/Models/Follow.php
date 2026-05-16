@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Follow extends Model
 {
-    protected $fillable = ['follower_id', 'author_id'];
+    protected $fillable = ['follower_id', 'following_id'];
 
     public $timestamps = false;
 
@@ -19,8 +19,8 @@ class Follow extends Model
         return $this->belongsTo(User::class, 'follower_id');
     }
 
-    public function author()
+    public function following()
     {
-        return $this->belongsTo(User::class, 'author_id');
+        return $this->belongsTo(User::class, 'following_id');
     }
 }

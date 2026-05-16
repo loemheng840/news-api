@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Follow;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class FollowController extends Controller
@@ -15,36 +16,37 @@ class FollowController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function follow(Request $request, int $authorId)
+    public function follow(Request $request, int $userId)
     {
-        $author = User::find($authorId);
+        $targetUser = User::find($userId);
 
-        if (!$author) {
+        if (!$targetUser) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        if (!in_array($author->role, ['AUTHOR', 'ADMIN'])) {
-            return response()->json(['message' => 'Target user is not an author'], 422);
-        }
-
-        if ($request->user()->id === $author->id) {
+        if ($request->user()->id === $targetUser->id) {
             return response()->json(['message' => 'You cannot follow yourself'], 422);
         }
 
         $follow = Follow::firstOrCreate(
             [
                 'follower_id' => $request->user()->id,
-                'author_id' => $author->id,
+                'following_id' => $targetUser->id,
             ],
             [
                 'created_at' => now(),
             ]
         );
 
+        // Send notification if this is a new follow
+        if ($follow->wasRecentlyCreated) {
+            app(NotificationService::class)->notifyNewFollower($follow);
+        }
+
         return response()->json([
             'data' => [
-                'author_id' => $author->id,
-                'author_name' => $author->name,
+                'following_id' => $targetUser->id,
+                'following_name' => $targetUser->name,
                 'followed_at' => $follow->created_at->toISOString(),
             ]
         ], 201);
@@ -56,16 +58,16 @@ class FollowController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function unfollow(Request $request, int $authorId)
+    public function unfollow(Request $request, int $userId)
     {
-        $author = User::find($authorId);
+        $targetUser = User::find($userId);
 
-        if (!$author) {
+        if (!$targetUser) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
         Follow::where('follower_id', $request->user()->id)
-            ->where('author_id', $author->id)
+            ->where('following_id', $targetUser->id)
             ->delete();
 
         return response()->json(['message' => 'Unfollowed successfully'], 200);
@@ -73,7 +75,7 @@ class FollowController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | FOLLOWING (list authors the current user follows)
+    | FOLLOWING (list users the current user follows)
     |--------------------------------------------------------------------------
     */
 
@@ -84,12 +86,12 @@ class FollowController extends Controller
             ->orderByPivot('created_at', 'desc')
             ->paginate(10);
 
-        $following->getCollection()->transform(function ($author) {
+        $following->getCollection()->transform(function ($user) {
             return [
-                'id' => $author->id,
-                'name' => $author->name,
-                'email' => $author->email,
-                'followed_at' => $author->pivot->created_at,
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'followed_at' => $user->pivot->created_at,
             ];
         });
 
@@ -98,7 +100,7 @@ class FollowController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | FOLLOWERS (list followers of the current author)
+    | FOLLOWERS (list followers of the current user)
     |--------------------------------------------------------------------------
     */
 
@@ -126,20 +128,16 @@ class FollowController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function checkStatus(Request $request, int $authorId)
+    public function checkStatus(Request $request, int $userId)
     {
-        $author = User::find($authorId);
+        $targetUser = User::find($userId);
 
-        if (!$author) {
+        if (!$targetUser) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        if (!in_array($author->role, ['AUTHOR', 'ADMIN'])) {
-            return response()->json(['message' => 'Target user is not an author'], 404);
-        }
-
         $follow = Follow::where('follower_id', $request->user()->id)
-            ->where('author_id', $author->id)
+            ->where('following_id', $targetUser->id)
             ->first();
 
         return response()->json([

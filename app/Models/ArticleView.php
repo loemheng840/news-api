@@ -6,9 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class ArticleView extends Model
 {
-    protected $fillable = ['article_id','user_id'];
-
-    public $timestamps = false;
+    protected $fillable = [
+        'article_id',
+        'user_id',
+        'session_id',
+        'ip_address',
+        'user_agent',
+        'referrer',
+        'read_percent',
+        'time_on_page',
+    ];
 
     public function article()
     {

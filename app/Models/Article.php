@@ -3,19 +3,26 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\Auditable;
 
 class Article extends Model
 {
+    use SoftDeletes, Auditable;
+
     protected $fillable = [
-        'title','slug','content','thumbnail','status',
-        'category_id','author_id','published_at','notified_at'
+        'title', 'slug', 'content', 'thumbnail', 'status',
+        'category_id', 'author_id', 'published_at', 'notified_at',
+        'excerpt', 'is_featured', 'is_breaking', 'reading_time_minutes',
     ];
 
     protected $casts = [
         'notified_at' => 'datetime',
+        'published_at' => 'datetime',
+        'is_featured' => 'boolean',
+        'is_breaking' => 'boolean',
     ];
 
-    // One article belongs to one category
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -49,5 +56,15 @@ class Article extends Model
     public function articleViews()
     {
         return $this->hasMany(ArticleView::class);
+    }
+
+    public function revisions()
+    {
+        return $this->hasMany(ArticleRevision::class);
+    }
+
+    public function seoMeta()
+    {
+        return $this->hasOne(SeoMeta::class);
     }
 }
