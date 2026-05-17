@@ -18,7 +18,7 @@ class CommentController extends Controller
         return Comment::where('article_id', $article)
             ->whereNull('parent_id')
             ->where('status', 'APPROVED')
-            ->with(['replies.user', 'user'])
+            ->with(['replies.user', 'replies.reactions', 'user', 'reactions'])
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -161,5 +161,68 @@ class CommentController extends Controller
         });
 
         return response()->json($comments);
+    }
+
+    /**
+     * Toggle a reaction (emoji) on a comment.
+     * Each user can only have ONE reaction per comment.
+     * Clicking the same emoji removes it, clicking a different emoji changes it.
+     * POST /api/comments/{comment}/react
+     */
+    public function react(Request $request, Comment $comment)
+    {
+        $request->validate([
+            'emoji' => 'required|string|in:👍,❤️,😂,😮,😢',
+        ]);
+
+        $existing = \App\Models\CommentReaction::where('comment_id', $comment->id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if ($existing) {
+            if ($existing->emoji === $request->emoji) {
+                // Same emoji — remove reaction (toggle off)
+                $existing->delete();
+                return response()->json(['message' => 'Reaction removed', 'action' => 'removed']);
+            }
+
+            // Different emoji — change reaction
+            $existing->update(['emoji' => $request->emoji]);
+            return response()->json(['message' => 'Reaction changed', 'action' => 'changed']);
+        }
+
+        // No existing reaction — add new one
+        \App\Models\CommentReaction::create([
+            'comment_id' => $comment->id,
+            'user_id' => $request->user()->id,
+            'emoji' => $request->emoji,
+        ]);
+
+        return response()->json(['message' => 'Reaction added', 'action' => 'added'], 201);
+    }
+
+    /**
+     * Get reactions for a comment.
+     * GET /api/comments/{comment}/reactions
+     */
+    public function reactions(Comment $comment)
+    {
+        $reactions = \App\Models\CommentReaction::where('comment_id', $comment->id)
+            ->select('emoji', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('emoji')
+            ->get();
+
+        $userReactions = [];
+        if (auth()->check()) {
+            $userReactions = \App\Models\CommentReaction::where('comment_id', $comment->id)
+                ->where('user_id', auth()->id())
+                ->pluck('emoji')
+                ->toArray();
+        }
+
+        return response()->json([
+            'reactions' => $reactions,
+            'user_reactions' => $userReactions,
+        ]);
     }
 }

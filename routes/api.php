@@ -120,9 +120,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/articles/{article}/meta', [ArticleController::class, 'attachMeta']);
         Route::get('/articles/me', [ArticleController::class, 'myArticles']);
 
-        Route::post('/articles/{article}/like', [EngagementController::class, 'like']);
-        Route::delete('/articles/{article}/like', [EngagementController::class, 'unlike']);
-
         // Article Revisions
         Route::get('/articles/{article}/revisions', [ArticleRevisionController::class, 'index']);
         Route::get('/articles/{article}/revisions/{version}', [ArticleRevisionController::class, 'show']);
@@ -132,6 +129,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/articles/{article}/seo', [SeoMetaController::class, 'update']);
         Route::get('/articles/{article}/seo', [SeoMetaController::class, 'show']);
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | LIKES (ANY AUTHENTICATED USER)
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/articles/{article}/like', [EngagementController::class, 'like']);
+    Route::delete('/articles/{article}/like', [EngagementController::class, 'unlike']);
 
     /*
     |--------------------------------------------------------------------------
@@ -176,6 +181,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
     Route::post('/comments/{comment}/like', [CommentController::class, 'like']);
     Route::delete('/comments/{comment}/like', [CommentController::class, 'unlike']);
+    Route::post('/comments/{comment}/react', [CommentController::class, 'react']);
+    Route::get('/comments/{comment}/reactions', [CommentController::class, 'reactions']);
     Route::get('/comments/{comment}/replies', [CommentController::class, 'replies']);
 
     Route::middleware('role:ADMIN')->group(function () {

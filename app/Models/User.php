@@ -23,12 +23,26 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $appends = ['avatar'];
+
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the user's avatar URL from their profile.
+     */
+    public function getAvatarAttribute(): ?string
+    {
+        $profile = $this->relationLoaded('profile')
+            ? $this->getRelation('profile')
+            : $this->profile;
+
+        return $profile?->avatar;
     }
 
     /**

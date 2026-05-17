@@ -56,6 +56,11 @@ class Comment extends Model
             ->orderBy('created_at', 'asc');
     }
 
+    public function reactions()
+    {
+        return $this->hasMany(CommentReaction::class);
+    }
+
     public function isReply()
     {
         return !is_null($this->parent_id);

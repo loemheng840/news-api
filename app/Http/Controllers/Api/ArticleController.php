@@ -148,7 +148,7 @@ class ArticleController extends Controller
                 'user_id' => $request->user()?->id,
                 'query' => Str::limit(trim($queryText), 255, ''),
                 'result_count' => $results->total(),
-                'ip_address' => $request->ip() ?? '0.0.0.0',
+                'ip_address' => $request->ip() ?? '127.0.0.1',
             ]);
         }
 
