@@ -61,11 +61,16 @@ class RegisteredUserController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
+                'role' => 'READER',
             ]);
+
+            // Auto-login: create a token so the frontend can log in immediately
+            $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'message' => 'User registered successfully',
-                'user' => $user
+                'user' => $user,
+                'token' => $token,
             ], 201);
         }
 
